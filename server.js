@@ -136,7 +136,7 @@ async function syncAllSubordinates() {
 
         try {
             const newUids = new Set();
-            const levels = [1, 2, 3]; // Query all levels (Direct + Indirect subordinates)
+            const levels = [1, 2]; // DMFirst API supports Level 1 (Direct) & Level 2 (Indirect)
 
             for (const level of levels) {
                 let page = 1;
@@ -191,7 +191,7 @@ async function syncAllSubordinates() {
                         });
                         page++;
                     } else {
-                        console.log(`[Sync] Level ${level} failed at page ${page}:`, res);
+                        console.log(`[Sync] Level ${level} ended at page ${page}:`, res.msg || res.code);
                         break;
                     }
                 }
