@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎯 WinGo 1 Min - AI Predictor</title>
+    <title>DMFirst number shot panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@300;400;600;700&display=swap');
-
         * {
             margin: 0;
             padding: 0;
@@ -855,7 +854,7 @@
             <!-- STEP 1: Register First -->
             <div id="step1">
                 <div class="login-logo">🎯</div>
-                <div class="login-title">WINGO PREDICTOR</div>
+                <div class="login-title" style="font-size: 20px;">DMFirst number shot panel</div>
                 <div class="login-subtitle">AI-Powered Prediction Engine</div>
 
                 <div class="login-form">
@@ -984,7 +983,7 @@
     <div class="container">
         <!-- Header -->
         <div class="header fade-in">
-            <h1>🎯 WINGO PREDICTOR</h1>
+            <h1 style="font-size: 22px;">🎯 DMFirst number shot panel</h1>
             <div class="subtitle">AI-Powered 1 Min Prediction Engine</div>
         </div>
 
@@ -1179,6 +1178,12 @@
                 document.getElementById('imagePreview').src = selectedBase64Image;
                 document.getElementById('imagePreviewContainer').style.display = 'block';
                 document.getElementById('depositError').style.display = 'none';
+
+                // Auto scroll button into clear view on mobile
+                setTimeout(() => {
+                    const btn = document.getElementById('verifyDepositBtn');
+                    if (btn) btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 150);
             };
             reader.readAsDataURL(file);
         }
@@ -1197,6 +1202,9 @@
             btn.disabled = true;
             btn.textContent = '🤖 AI Scanning Screenshot (Date & Amount)...';
             errorEl.style.display = 'none';
+
+            // Auto scroll scanning status into view
+            btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
             try {
                 const response = await fetch('/api/verify-deposit', {
