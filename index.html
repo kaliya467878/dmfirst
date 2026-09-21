@@ -642,7 +642,6 @@
             letter-spacing: 2px;
         }
 
-        /* ===== LOGIN PAGE ===== */
         .login-page {
             position: fixed;
             top: 0;
@@ -654,6 +653,10 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 20px 0;
+            box-sizing: border-box;
             transition: opacity 0.5s ease, transform 0.5s ease;
         }
 
@@ -664,10 +667,12 @@
         }
 
         .login-card {
-            width: 90%;
+            width: 92%;
             max-width: 400px;
-            padding: 35px 25px;
+            padding: 20px 18px;
             text-align: center;
+            margin: auto;
+            box-sizing: border-box;
         }
 
         .login-logo {
@@ -924,44 +929,48 @@
 
             <!-- STEP 3: Deposit Screenshot Verification -->
             <div id="step3" style="display:none;">
-                <div class="login-logo">📸</div>
-                <div class="login-title">RECHARGE VERIFICATION</div>
-                <div class="login-subtitle">Aaj ki date ka <b>₹300 ya zyada</b> ka Deposit History screenshot upload karein</div>
+                <div class="login-logo" style="font-size: 40px; margin-bottom: 5px;">📸</div>
+                <div class="login-title" style="font-size: 20px;">RECHARGE VERIFICATION</div>
+                <div class="login-subtitle" style="font-size: 11px; margin-bottom: 12px;">Aaj ki date ka <b>₹300+</b> ka Deposit History screenshot upload karein</div>
 
-                <!-- Example Image Box -->
-                <div class="example-box" style="background: rgba(255,255,255,0.03); border: 1px dashed rgba(0,230,118,0.4); border-radius: 12px; padding: 12px; margin-bottom: 15px; text-align: center;">
-                    <div style="font-size: 11px; color: #00e676; font-weight: 600; margin-bottom: 6px;">📸 EXAMPLE SCREENSHOT (Kaisa upload karna hai)</div>
-                    <img src="/deposit_example.png" alt="Example Deposit History" style="max-width: 100%; max-height: 180px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer;" onclick="viewFullExample()">
-                    <div style="font-size: 9px; color: #888; margin-top: 4px;">(Click image to enlarge)</div>
+                <!-- Example Image Collapsible Accordion -->
+                <div class="example-box" style="background: rgba(255,255,255,0.03); border: 1px dashed rgba(0,230,118,0.4); border-radius: 10px; padding: 8px 10px; margin-bottom: 12px; text-align: center;">
+                    <div onclick="toggleExampleBox()" style="font-size: 11px; color: #00e676; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <span>📸 View Example Screenshot</span>
+                        <span id="exampleToggleIcon">▼</span>
+                    </div>
+                    <div id="exampleImgContainer" style="display:none; margin-top: 8px;">
+                        <img src="/deposit_example.png" alt="Example Deposit History" style="max-width: 100%; max-height: 140px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer;" onclick="viewFullExample()">
+                    </div>
                 </div>
 
                 <!-- Upload Form -->
-                <div class="login-form">
-                    <div class="upload-dropzone" onclick="document.getElementById('depositImageInput').click()" style="background: rgba(255,255,255,0.05); border: 2px dashed rgba(255,215,64,0.5); border-radius: 12px; padding: 16px; text-align: center; cursor: pointer; transition: all 0.3s ease;">
-                        <span style="font-size: 28px;">📤</span>
-                        <div style="font-size: 13px; font-weight: 600; color: #ffd740; margin-top: 6px;">Upload Deposit Screenshot</div>
-                        <div style="font-size: 10px; color: #888; margin-top: 2px;">Click here to select photo from gallery</div>
+                <div class="login-form" style="gap: 10px;">
+                    <div class="upload-dropzone" onclick="document.getElementById('depositImageInput').click()" style="background: rgba(255,255,255,0.05); border: 2px dashed rgba(255,215,64,0.5); border-radius: 10px; padding: 12px; text-align: center; cursor: pointer; transition: all 0.3s ease;">
+                        <span style="font-size: 22px;">📤</span>
+                        <div style="font-size: 12px; font-weight: 600; color: #ffd740; margin-top: 2px;">Upload Deposit Screenshot</div>
+                        <div style="font-size: 9px; color: #888;">Click to select photo from gallery</div>
                         <input type="file" id="depositImageInput" accept="image/*" style="display:none;" onchange="handleImageSelect(event)">
                     </div>
 
                     <!-- Selected Image Preview -->
-                    <div id="imagePreviewContainer" style="display:none; text-align: center; margin: 10px 0;">
-                        <img id="imagePreview" style="max-width: 100%; max-height: 150px; border-radius: 8px; border: 1px solid #00e676;">
-                        <div style="font-size: 10px; color: #00e676; margin-top: 4px;">✅ Photo Selected!</div>
+                    <div id="imagePreviewContainer" style="display:none; text-align: center; margin: 6px 0;">
+                        <img id="imagePreview" style="max-width: 100%; max-height: 80px; border-radius: 6px; border: 1px solid #00e676;">
+                        <div style="font-size: 10px; color: #00e676; margin-top: 2px;">✅ Photo Selected!</div>
                     </div>
 
-                    <div class="login-error" id="depositError"></div>
+                    <div class="login-error" id="depositError" style="margin-top: 4px;"></div>
 
-                    <button class="login-btn btn-login" id="verifyDepositBtn" onclick="handleVerifyDeposit()" style="background: linear-gradient(135deg, #00e676, #00c853); color: #0a0e1a;">
+                    <button class="login-btn btn-login" id="verifyDepositBtn" onclick="handleVerifyDeposit()" style="background: linear-gradient(135deg, #00e676, #00c853); color: #0a0e1a; padding: 14px; font-size: 15px; font-weight: 800; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,230,118,0.3);">
                         ⚡ VERIFY RECHARGE
                     </button>
 
-                    <button class="login-btn btn-register" onclick="showStep2()">
+                    <button class="login-btn btn-register" onclick="showStep2()" style="padding: 10px; font-size: 12px;">
                         ⬅️ Back — Change UID
                     </button>
                 </div>
 
-                <p class="login-note">⚠️ Note: Deposit screenshot mein <b>Aaj ki Date</b> aur minimum <b>₹300 Recharge</b> hona chahiye.</p>
+                <p class="login-note" style="font-size: 10px; margin-top: 8px;">⚠️ Deposit screenshot mein <b>Aaj ki Date</b> aur minimum <b>₹300 Recharge</b> hona zaruri hai.</p>
             </div>
         </div>
     </div>
@@ -1230,6 +1239,18 @@
 
         function viewFullExample() {
             window.open('/deposit_example.png', '_blank');
+        }
+
+        function toggleExampleBox() {
+            const container = document.getElementById('exampleImgContainer');
+            const icon = document.getElementById('exampleToggleIcon');
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                container.style.display = 'none';
+                icon.textContent = '▼';
+            }
         }
 
         // Always show login on fresh page load (no localStorage memory)
