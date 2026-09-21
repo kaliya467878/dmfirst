@@ -121,99 +121,95 @@ async function adminLogin() {
 }
 
 // ============== SYNC ALL SUBORDINATES (LEVELS 1, 2, 3) FROM DMFIRST ==============
-async function syncAllSubordinates() {
-    if (isSyncing) return;
-    isSyncing = true;
+let currentSyncPromise = null;
 
-    if (!adminToken) {
-        const ok = await adminLogin();
-        if (!ok) {
-            isSyncing = false;
-            return;
-        }
+async function syncAllSubordinates() {
+    if (currentSyncPromise) {
+        return currentSyncPromise;
     }
 
-    try {
-        const now = new Date();
-        const pad = (n) => String(n).padStart(2, '0');
-        const fmt = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    currentSyncPromise = (async () => {
+        if (!adminToken) {
+            const ok = await adminLogin();
+            if (!ok) return;
+        }
 
-        // Fetch last 90 days of records
-        const startDate = fmt(new Date(now.getTime() - 90 * 86400000));
-        const endDate = fmt(new Date(now.getTime() + 86400000));
+        try {
+            const newUids = new Set();
+            const levels = [1, 2, 3]; // Query all levels (Direct + Indirect subordinates)
 
-        const newUids = new Set();
-        const levels = [1, 2, 3]; // Query all levels (Direct + Indirect subordinates)
+            for (const level of levels) {
+                let page = 1;
+                let totalPages = 1;
 
-        for (const level of levels) {
-            let page = 1;
-            let totalPages = 1;
-
-            while (page <= totalPages) {
-                let res = await makeApiRequest('/GetPromotionRecord', {
-                    startDate,
-                    endDate,
-                    level: level,
-                    pageNo: page,
-                    pageSize: 100,
-                    token: adminToken
-                }, adminToken, tokenHeader);
-
-                // Re-login if token expired or permission error
-                if (res.code !== 0) {
-                    console.log('[Sync] Token invalid/expired (code ' + res.code + '), re-logging in...');
-                    const ok = await adminLogin();
-                    if (!ok) break;
-                    res = await makeApiRequest('/GetPromotionRecord', {
-                        startDate,
-                        endDate,
+                while (page <= totalPages) {
+                    let res = await makeApiRequest('/GetPromotionRecord', {
+                        startDate: '',
+                        endDate: '',
                         level: level,
                         pageNo: page,
                         pageSize: 100,
                         token: adminToken
                     }, adminToken, tokenHeader);
-                }
 
-                if (res.code === 0 && res.data) {
-                    const totalCount = res.data.total || res.data.totalCount || res.data.count || 0;
-                    const pageSize = res.data.pageSize || 100;
-                    totalPages = res.data.totalPage || res.data.pageCount || res.data.totalPages || (totalCount > 0 ? Math.ceil(totalCount / pageSize) : 1);
-                    
-                    const list = res.data.list || [];
+                    // Re-login if token expired or permission error
+                    if (res.code !== 0) {
+                        console.log('[Sync] Token invalid/expired (code ' + res.code + '), re-logging in...');
+                        const ok = await adminLogin();
+                        if (!ok) break;
+                        res = await makeApiRequest('/GetPromotionRecord', {
+                            startDate: '',
+                            endDate: '',
+                            level: level,
+                            pageNo: page,
+                            pageSize: 100,
+                            token: adminToken
+                        }, adminToken, tokenHeader);
+                    }
 
-                    list.forEach(item => {
-                        // Extract all properties to ensure no ID / bindID / phone / account field is missed
-                        Object.keys(item).forEach(k => {
-                            const val = String(item[k] || '').trim();
-                            if (val && val.length >= 3 && !val.includes('{') && !val.includes('[')) {
-                                newUids.add(val);
-                                if (val.startsWith('91') && val.length > 5) {
-                                    newUids.add(val.slice(2));
+                    if (res.code === 0 && res.data) {
+                        const totalCount = res.data.total || res.data.totalCount || res.data.count || 0;
+                        const pageSize = res.data.pageSize || 100;
+                        totalPages = res.data.totalPage || res.data.pageCount || res.data.totalPages || (totalCount > 0 ? Math.ceil(totalCount / pageSize) : 1);
+                        
+                        const list = res.data.list || [];
+
+                        list.forEach(item => {
+                            // Extract all properties to ensure no ID / bindID / phone / account field is missed
+                            Object.keys(item).forEach(k => {
+                                const val = String(item[k] || '').trim();
+                                if (val && val.length >= 3 && !val.includes('{') && !val.includes('[')) {
+                                    newUids.add(val);
+                                    if (val.startsWith('91') && val.length > 5) {
+                                        newUids.add(val.slice(2));
+                                    }
+                                    if (!val.startsWith('91') && val.length === 10) {
+                                        newUids.add('91' + val);
+                                    }
                                 }
-                                if (!val.startsWith('91') && val.length === 10) {
-                                    newUids.add('91' + val);
-                                }
-                            }
+                            });
                         });
-                    });
-                    page++;
-                } else {
-                    console.log(`[Sync] Level ${level} failed at page ${page}:`, res);
-                    break;
+                        page++;
+                    } else {
+                        console.log(`[Sync] Level ${level} failed at page ${page}:`, res);
+                        break;
+                    }
                 }
             }
-        }
 
-        if (newUids.size > 0) {
-            verifiedUidsSet = newUids;
-            lastSyncTime = Date.now();
-            console.log(`[Sync] ✅ Successfully synchronized ${verifiedUidsSet.size} subordinate UIDs (Levels 1, 2, 3) from DMFirst!`);
+            if (newUids.size > 0) {
+                verifiedUidsSet = newUids;
+                lastSyncTime = Date.now();
+                console.log(`[Sync] ✅ Successfully synchronized ${verifiedUidsSet.size} subordinate UIDs (Levels 1, 2, 3) from DMFirst!`);
+            }
+        } catch (e) {
+            console.log('[Sync] Error syncing subordinates:', e.message);
+        } finally {
+            currentSyncPromise = null;
         }
-    } catch (e) {
-        console.log('[Sync] Error syncing subordinates:', e.message);
-    } finally {
-        isSyncing = false;
-    }
+    })();
+
+    return currentSyncPromise;
 }
 
 // ============== VERIFY UID (AUTOMATED WITH CLEANING) ==============
