@@ -15,7 +15,7 @@ const PORT = 8080;
 let adminToken = '';
 let tokenHeader = 'Bearer ';
 
-// In-memory set of all subordinate UIDs
+// In-memory set of all subordinate UIDs across all levels
 let verifiedUidsSet = new Set();
 let lastSyncTime = 0;
 let isSyncing = false;
@@ -120,7 +120,7 @@ async function adminLogin() {
     }
 }
 
-// ============== SYNC ALL SUBORDINATES FROM DMFIRST ==============
+// ============== SYNC ALL SUBORDINATES (LEVELS 1, 2, 3) FROM DMFIRST ==============
 async function syncAllSubordinates() {
     if (isSyncing) return;
     isSyncing = true;
@@ -142,58 +142,72 @@ async function syncAllSubordinates() {
         const startDate = fmt(new Date(now.getTime() - 90 * 86400000));
         const endDate = fmt(new Date(now.getTime() + 86400000));
 
-        let page = 1;
-        let totalPages = 1;
         const newUids = new Set();
+        const levels = [1, 2, 3]; // Query all levels (Direct + Indirect subordinates)
 
-        while (page <= totalPages) {
-            let res = await makeApiRequest('/GetPromotionRecord', {
-                startDate,
-                endDate,
-                level: 1,
-                pageNo: page,
-                pageSize: 100,
-                token: adminToken
-            }, adminToken, tokenHeader);
+        for (const level of levels) {
+            let page = 1;
+            let totalPages = 1;
 
-            // Re-login if token expired or permission error
-            if (res.code !== 0) {
-                console.log('[Sync] Token invalid/expired (code ' + res.code + '), re-logging in...');
-                const ok = await adminLogin();
-                if (!ok) break;
-                res = await makeApiRequest('/GetPromotionRecord', {
+            while (page <= totalPages) {
+                let res = await makeApiRequest('/GetPromotionRecord', {
                     startDate,
                     endDate,
-                    level: 1,
+                    level: level,
                     pageNo: page,
                     pageSize: 100,
                     token: adminToken
                 }, adminToken, tokenHeader);
-            }
 
-            if (res.code === 0 && res.data) {
-                totalPages = res.data.totalPage || 1;
-                const list = res.data.list || [];
+                // Re-login if token expired or permission error
+                if (res.code !== 0) {
+                    console.log('[Sync] Token invalid/expired (code ' + res.code + '), re-logging in...');
+                    const ok = await adminLogin();
+                    if (!ok) break;
+                    res = await makeApiRequest('/GetPromotionRecord', {
+                        startDate,
+                        endDate,
+                        level: level,
+                        pageNo: page,
+                        pageSize: 100,
+                        token: adminToken
+                    }, adminToken, tokenHeader);
+                }
 
-                list.forEach(item => {
-                    const u1 = String(item.bindUserID || '').trim();
-                    const u2 = String(item.userId || '').trim();
-                    const u3 = String(item.uid || '').trim();
-                    if (u1) newUids.add(u1);
-                    if (u2) newUids.add(u2);
-                    if (u3) newUids.add(u3);
-                });
-                page++;
-            } else {
-                console.log('[Sync] Failed at page ' + page + ':', res);
-                break;
+                if (res.code === 0 && res.data) {
+                    const totalCount = res.data.total || res.data.totalCount || res.data.count || 0;
+                    const pageSize = res.data.pageSize || 100;
+                    totalPages = res.data.totalPage || res.data.pageCount || res.data.totalPages || (totalCount > 0 ? Math.ceil(totalCount / pageSize) : 1);
+                    
+                    const list = res.data.list || [];
+
+                    list.forEach(item => {
+                        // Extract all properties to ensure no ID / bindID / phone / account field is missed
+                        Object.keys(item).forEach(k => {
+                            const val = String(item[k] || '').trim();
+                            if (val && val.length >= 3 && !val.includes('{') && !val.includes('[')) {
+                                newUids.add(val);
+                                if (val.startsWith('91') && val.length > 5) {
+                                    newUids.add(val.slice(2));
+                                }
+                                if (!val.startsWith('91') && val.length === 10) {
+                                    newUids.add('91' + val);
+                                }
+                            }
+                        });
+                    });
+                    page++;
+                } else {
+                    console.log(`[Sync] Level ${level} failed at page ${page}:`, res);
+                    break;
+                }
             }
         }
 
         if (newUids.size > 0) {
             verifiedUidsSet = newUids;
             lastSyncTime = Date.now();
-            console.log(`[Sync] ✅ Successfully synchronized ${verifiedUidsSet.size} subordinate UIDs from DMFirst!`);
+            console.log(`[Sync] ✅ Successfully synchronized ${verifiedUidsSet.size} subordinate UIDs (Levels 1, 2, 3) from DMFirst!`);
         }
     } catch (e) {
         console.log('[Sync] Error syncing subordinates:', e.message);
@@ -202,36 +216,52 @@ async function syncAllSubordinates() {
     }
 }
 
-// ============== VERIFY UID ==============
+// ============== VERIFY UID (AUTOMATED WITH CLEANING) ==============
 async function verifyUidAutomated(targetUid) {
-    const cleanTargetUid = String(targetUid).trim();
+    let cleanTargetUid = String(targetUid).trim();
     if (!cleanTargetUid) return { found: false, message: 'UID cannot be empty' };
 
-    // Check in-memory set first
-    if (verifiedUidsSet.has(cleanTargetUid)) {
-        console.log(`[Verify UID] 🎉 UID ${cleanTargetUid} MATCHED!`);
-        return { found: true };
+    // Strip leading + or +91 if user typed phone prefix
+    if (cleanTargetUid.startsWith('+91')) cleanTargetUid = cleanTargetUid.slice(3);
+    else if (cleanTargetUid.startsWith('+')) cleanTargetUid = cleanTargetUid.slice(1);
+
+    const digitsOnly = cleanTargetUid.replace(/\D/g, '');
+
+    const candidates = [
+        cleanTargetUid,
+        '91' + cleanTargetUid,
+        digitsOnly,
+        '91' + digitsOnly
+    ].filter(Boolean);
+
+    for (const cand of candidates) {
+        if (verifiedUidsSet.has(cand)) {
+            console.log(`[Verify UID] 🎉 UID ${cleanTargetUid} MATCHED (via candidate '${cand}')!`);
+            return { found: true };
+        }
     }
 
-    // Live sync fallback
+    // Live sync fallback across all levels
     console.log(`[Verify UID] UID ${cleanTargetUid} not in memory, performing live sync...`);
     await syncAllSubordinates();
 
-    if (verifiedUidsSet.has(cleanTargetUid)) {
-        console.log(`[Verify UID] 🎉 UID ${cleanTargetUid} MATCHED after live sync!`);
-        return { found: true };
+    for (const cand of candidates) {
+        if (verifiedUidsSet.has(cand)) {
+            console.log(`[Verify UID] 🎉 UID ${cleanTargetUid} MATCHED after live sync!`);
+            return { found: true };
+        }
     }
 
-    console.log(`[Verify UID] ❌ UID ${cleanTargetUid} not found in DMFirst records.`);
+    console.log(`[Verify UID] ❌ UID ${cleanTargetUid} not found in DMFirst records (${verifiedUidsSet.size} UIDs in memory).`);
     return { found: false };
 }
 
-// ============== AI DEPOSIT OCR PARSER ==============
+// ============== AI DEPOSIT OCR PARSER (STRICT STATUS + DATE + AMOUNT >= 300) ==============
 function parseDepositText(text, targetDate) {
     console.log(`[AI OCR] Analyzing text for target date: ${targetDate}`);
     
-    // Basic validity check for deposit history
-    const isDeposit = /Deposit|Order|RC20|History|Recharge|Complete|Failed|UPI/i.test(text);
+    // 1. Basic validity check for deposit history page
+    const isDeposit = /Deposit|Order|RC20|History|Recharge|UPI|Pay/i.test(text);
     if (!isDeposit) {
         return { 
             approved: false, 
@@ -239,64 +269,62 @@ function parseDepositText(text, targetDate) {
         };
     }
 
-    // Check target date (YYYY-MM-DD or YYYY/MM/DD or YYYY.MM.DD)
+    // Prepare date regex (e.g. 2026-09-22 or 2026/09/22)
     const dateRegexStr = targetDate.replace(/-/g, '[-/\\.]');
     const todayRegex = new RegExp(dateRegexStr, 'g');
-    const hasTodayDate = todayRegex.test(text);
 
-    if (!hasTodayDate) {
-        return { 
-            approved: false, 
-            reason: `⚠️ Aaj ki date (${targetDate}) ka deposit nahi mila. Kripya aaj ki date ka Deposit History screenshot upload karein.` 
-        };
+    // Split text into deposit cards by Deposit/Order/Recharge keywords or date headers
+    let cardChunks = text.split(/(?=\bDeposit\b|\bOrder\b|\bRecharge\b|\b\d{4}[-/]\d{2}[-/]\d{2}\b)/i)
+                         .map(c => c.trim())
+                         .filter(c => c.length > 15);
+
+    if (cardChunks.length === 0) {
+        cardChunks = [text];
     }
 
-    // Extract amounts from lines
-    const lines = text.split('\n');
-    let amounts = [];
+    console.log('[AI OCR] Total Deposit Cards detected:', cardChunks.length);
 
-    lines.forEach(line => {
-        if (/Order\s*amount|amount|Complete/i.test(line) || /[₹%]\s*\d/.test(line)) {
-            const matches = line.match(/([1-9]\d{0,2}(?:,\d{3})+|[1-9]\d{2,5})(?:\.\d{2})?/g);
+    let approvedAmounts = [];
+
+    cardChunks.forEach((card, idx) => {
+        const hasToday = todayRegex.test(card);
+        // Positive check: Must explicitly contain Complete/Completed/Succeed/Success
+        const hasPositive = /complete|completed|succeed|success/i.test(card);
+
+        // Negative check: Reject if contains any non-completed status like Paid, De paid, To be paid, Unpaid, Pending, Failed, etc.
+        const hasNegative = /paid|payed|unpaid|pending|failed|refus|process|timeout|cancel|uncompleted|incomplete/i.test(card);
+
+        console.log(`[AI OCR] Card ${idx+1}: Today=${hasToday}, Positive(Complete)=${hasPositive}, Negative(Paid/Pending/Failed)=${hasNegative}`);
+
+        // MUST have Today's date AND status MUST be Complete/Success AND MUST NOT contain any Paid/Pending/Failed status
+        if (hasToday && hasPositive && !hasNegative) {
+            const matches = card.match(/([1-9]\d{0,2}(?:,\d{3})+|[1-9]\d{2,5})(?:\.\d{2})?/g);
             if (matches) {
                 matches.forEach(m => {
                     const clean = parseFloat(m.replace(/,/g, ''));
-                    if (!isNaN(clean) && clean !== 2026 && clean !== 2025 && clean >= 100) {
-                        amounts.push(clean);
+                    if (!isNaN(clean) && clean !== 2026 && clean !== 2025 && clean >= 100 && clean <= 500000) {
+                        approvedAmounts.push(clean);
                     }
                 });
             }
         }
     });
 
-    // Fallback: search overall text for numbers >= 300
-    if (amounts.length === 0) {
-        const allMatches = text.match(/([1-9]\d{0,2}(?:,\d{3})+|[1-9]\d{2,5})(?:\.\d{2})?/g);
-        if (allMatches) {
-            allMatches.forEach(m => {
-                const clean = parseFloat(m.replace(/,/g, ''));
-                if (!isNaN(clean) && clean !== 2026 && clean !== 2025 && clean >= 300 && clean <= 500000) {
-                    amounts.push(clean);
-                }
-            });
-        }
-    }
+    console.log('[AI OCR] Approved Amounts:', approvedAmounts);
 
-    console.log('[AI OCR] Parsed Amounts:', amounts);
-
-    const validAmount = amounts.find(amt => amt >= 300);
+    const validAmount = approvedAmounts.find(amt => amt >= 300);
 
     if (!validAmount) {
         return { 
             approved: false, 
-            reason: `⚠️ Aaj ki date ka deposit ₹300 se kam hai. Minimum ₹300 recharge required for access.` 
+            reason: `⚠️ Aaj ki date (${targetDate}) par Completed deposit ₹300 se kam hai (ya status Complete nahi hai). Status 'Paid' / 'To be paid' / 'Pending' reject hota hai.` 
         };
     }
 
     return {
         approved: true,
         amount: validAmount,
-        reason: `✅ Aaj ka Deposit Verified: ₹${validAmount}!`
+        reason: `✅ Aaj ka Completed Deposit Verified: ₹${validAmount}!`
     };
 }
 
@@ -412,8 +440,8 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, async () => {
     console.log('\n======================================================');
     console.log(`🎯 WinGo Predictor Server running at: http://localhost:${PORT}`);
-    console.log(`🤖 Live Automated DMFirst Sync Engine: INITIALIZING`);
-    console.log(`📸 AI Deposit History OCR Engine: INITIALIZING`);
+    console.log(`🤖 Live Automated DMFirst Sync Engine (Levels 1,2,3): INITIALIZING`);
+    console.log(`📸 AI Deposit History OCR Engine (Strict Complete Status): INITIALIZING`);
     console.log('======================================================\n');
 
     await adminLogin();
