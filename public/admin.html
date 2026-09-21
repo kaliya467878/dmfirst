@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel - Wingo VIP Predictor</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .admin-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 100%;
+    }
+    .admin-main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 768px) {
+      .admin-main {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-container">
+    <header class="admin-header">
+      <div class="logo-container">
+        <div class="logo-dot"></div>
+        <span class="logo-text">ADMIN CONTROL PANEL</span>
+      </div>
+      <button id="btn-logout" class="btn-secondary" style="background:transparent; border:none; color:var(--color-red); display:none;">Log Out</button>
+    </header>
+
+    <!-- ADMIN LOGIN CARD -->
+    <div id="admin-login-card" class="card" style="max-width: 400px; margin: 50px auto;">
+      <h2 class="gate-title" style="margin-bottom: 20px;">Admin Authentication</h2>
+      <div class="deposit-form">
+        <div class="form-group">
+          <label for="admin-password">Enter Admin Password</label>
+          <input type="password" id="admin-password" class="form-input" placeholder="Enter admin password" required>
+        </div>
+        <button id="btn-admin-login" class="btn-primary">Login</button>
+      </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD -->
+    <div id="admin-dashboard" class="admin-main" style="display: none;">
+      
+      <!-- COLUMN 1: System Stats & Scraper Setup -->
+      <div style="display:flex; flex-direction:column; gap:20px;">
+        <!-- STATS CARD -->
+        <div class="card">
+          <h3 class="section-title" style="margin-bottom: 15px;">System Overview</h3>
+          <div class="stat-group" style="grid-template-columns: 1fr 1fr;">
+            <div class="stat-item">
+              <span class="referral-label">Approved Players</span>
+              <div id="stat-total" class="stat-val" style="color:var(--color-green);">0</div>
+            </div>
+            <div class="stat-item">
+              <span class="referral-label">Game Scraper</span>
+              <div id="stat-sync" class="stat-val" style="color:var(--color-small);">Yes</div>
+            </div>
+          </div>
+          
+          <div class="status-badge" style="justify-content:space-between; padding:12px; margin-top:10px;">
+            <span>Live Wingo Scraper:</span>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <div id="tracker-indicator" class="status-indicator"></div>
+              <span id="tracker-pulse">Offline</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TRACKER SETUP CARD -->
+        <div class="card">
+          <h3 class="section-title" style="margin-bottom: 12px;">Live Wingo Scraper Setup</h3>
+          <p style="font-size:13px; color:var(--text-secondary); line-height:1.5; margin-bottom:15px;">
+            Run this script inside the Chrome/Edge developer console on the live Wingo page to feed real-time results into your prediction database.
+          </p>
+          <ol style="font-size:12px; color:var(--text-secondary); margin-left:15px; margin-bottom:15px; display:flex; flex-direction:column; gap:6px;">
+            <li>Login to the <a href="https://www.bg678r.com/#/pages/games/wingo/wingo" target="_blank" style="color:var(--accent-color);">Wingo Page</a>.</li>
+            <li>Press <strong>F12</strong> (or inspect element) and open the <strong>Console</strong>.</li>
+            <li>Copy the code block below, paste it in, and press <strong>Enter</strong>.</li>
+            <li>Keep the game tab open. It will automatically update your site when new rounds complete.</li>
+          </ol>
+          <textarea id="tracker-code" class="tracker-script-box" style="height:150px;" readonly onclick="this.select();"></textarea>
+          <button id="btn-copy-code" class="btn-secondary" style="width:100%; margin-top:10px;">Copy Scraper Code</button>
+        </div>
+      </div>
+
+      <!-- COLUMN 2: VIP Members Directory -->
+      <div class="card" style="display:flex; flex-direction:column; gap:15px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3 class="section-title">Approved VIP Players</h3>
+          <button id="btn-manual-add" class="btn-secondary" style="padding: 4px 10px; font-size: 12px; background:var(--accent-color); border:none;">+ Add UID</button>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:10px; max-height:450px; overflow-y:auto; padding-right:4px;" id="users-list">
+          <div style="text-align:center; padding: 40px; color:var(--text-muted); font-size:13px;">
+            No VIP players approved yet. They will automatically appear here when they run the verification gate.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = window.location.origin;
+    let adminToken = sessionStorage.getItem('admin_token');
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initAdmin();
+      setupEventListeners();
+    });
+
+    function initAdmin() {
+      if (adminToken) {
+        showDashboard();
+      } else {
+        showLogin();
+      }
+    }
+
+    function showLogin() {
+      document.getElementById('admin-login-card').style.display = 'block';
+      document.getElementById('admin-dashboard').style.display = 'none';
+      document.getElementById('btn-logout').style.display = 'none';
+    }
+
+    function showDashboard() {
+      document.getElementById('admin-login-card').style.display = 'none';
+      document.getElementById('admin-dashboard').style.display = 'grid';
+      document.getElementById('btn-logout').style.display = 'block';
+      
+      generateTrackerCodeText();
+      loadDashboardData();
+      setInterval(loadDashboardData, 5000); // refresh dashboard data every 5 seconds
+    }
+
+    function setupEventListeners() {
+      // Login
+      document.getElementById('btn-admin-login').addEventListener('click', async () => {
+        const password = document.getElementById('admin-password').value;
+        try {
+          const res = await fetch(`${API_URL}/api/admin/login`, {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+              'Bypass-Tunnel-Reminder': 'true'
+            },
+            body: JSON.stringify({ password })
+          });
+          const data = await res.json();
+          if (data.success) {
+            adminToken = data.token;
+            sessionStorage.setItem('admin_token', adminToken);
+            showDashboard();
+          } else {
+            alert(data.error || 'Login failed.');
+          }
+        } catch (err) {
+          alert('Error connecting to server.');
+        }
+      });
+
+      // Logout
+      document.getElementById('btn-logout').addEventListener('click', () => {
+        sessionStorage.removeItem('admin_token');
+        adminToken = null;
+        showLogin();
+      });
+
+      // Copy Code
+      document.getElementById('btn-copy-code').addEventListener('click', () => {
+        const codeText = document.getElementById('tracker-code');
+        codeText.select();
+        document.execCommand('copy');
+        alert('Scraper code copied to clipboard!');
+      });
+
+      // Manual Add UID
+      document.getElementById('btn-manual-add').addEventListener('click', async () => {
+        const uid = prompt('Enter Player Game UID to approve manually:');
+        if (!uid || isNaN(uid)) return;
+
+        try {
+          const res = await fetch(`${API_URL}/api/admin/force-approve`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': adminToken,
+              'Bypass-Tunnel-Reminder': 'true'
+            },
+            body: JSON.stringify({ uid })
+          });
+          const data = await res.json();
+          if (data.success) {
+            loadDashboardData();
+          } else {
+            alert('Error adding user.');
+          }
+        } catch (err) {
+          alert('Network error.');
+        }
+      });
+    }
+
+    function generateTrackerCodeText() {
+      const code = `/**
+ * WINGO LIVE RESULT SCRAPER
+ * Run this in your bg678r.com browser console!
+ */
+(function() {
+  const SERVER_URL = "${API_URL}";
+  console.log("%c[Wingo Scraper]%c Service Started. Monitoring history...", "color:#ff9100; font-weight:bold;", "color:#00e676;");
+  
+  let lastReportedPeriod = localStorage.getItem('last_reported_period') || "";
+
+  // Mathematical color/size mapper from Wingo rules
+  function parseNumberMeta(num) {
+    const n = parseInt(num, 10);
+    const size = n >= 5 ? 'Big' : 'Small';
+    let color = 'Green';
+    if (n === 0) color = 'Red+Violet';
+    else if (n === 5) color = 'Green+Violet';
+    else if (n % 2 === 0) color = 'Red';
+    return { size, color };
+  }
+
+  async function checkHistoryTable() {
+    try {
+      // Look for standard game history rows
+      const rows = document.querySelectorAll('tr, .game-record-item, .uni-table-tr');
+      
+      for (const row of rows) {
+        const text = row.innerText || row.textContent || "";
+        const periodMatch = text.match(/\\b20\\d{10,14}\\b/);
+        
+        if (periodMatch) {
+          const period = periodMatch[0];
+          if (period === lastReportedPeriod) break;
+          
+          const cells = Array.from(row.querySelectorAll('td, span, div'))
+            .map(el => el.innerText ? el.innerText.trim() : "")
+            .filter(txt => txt.length === 1 && /^[0-9]$/.test(txt));
+          
+          if (cells.length > 0) {
+            const num = parseInt(cells[0], 10);
+            const { size, color } = parseNumberMeta(num);
+            
+            console.log(\`%c[Scraper] New Result Detected! Period: \${period}, Number: \${num} (\${color}, \${size})\`, "color:#4f46e5; font-weight:bold;");
+            
+            await fetch(\`\${SERVER_URL}/api/tracker/update\`, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Bypass-Tunnel-Reminder': 'true'
+              },
+              body: JSON.stringify({ period, number: num, color, size })
+            });
+
+            lastReportedPeriod = period;
+            localStorage.setItem('last_reported_period', period);
+            break; 
+          }
+        }
+      }
+    } catch (err) {
+      console.error("[Scraper Error]", err);
+    }
+  }
+
+  setInterval(checkHistoryTable, 2000);
+})();`;
+
+      document.getElementById('tracker-code').value = code;
+    }
+
+    async function loadDashboardData() {
+      if (!adminToken) return;
+
+      try {
+        const statsRes = await fetch(`${API_URL}/api/admin/stats`, {
+          headers: { 
+            'Authorization': adminToken,
+            'Bypass-Tunnel-Reminder': 'true'
+          }
+        });
+        const stats = await statsRes.json();
+        
+        document.getElementById('stat-total').textContent = stats.totalUsers;
+
+        const trackerIndicator = document.getElementById('tracker-indicator');
+        const trackerPulse = document.getElementById('tracker-pulse');
+        
+        if (stats.trackerActive) {
+          trackerIndicator.classList.add('active');
+          const lastPulse = new Date(stats.lastTrackerPulse);
+          const diffSeconds = Math.round((new Date() - lastPulse) / 1000);
+          trackerPulse.textContent = `Online (${diffSeconds}s ago)`;
+        } else {
+          trackerIndicator.classList.remove('active');
+          trackerPulse.textContent = 'Offline';
+        }
+
+        const usersRes = await fetch(`${API_URL}/api/admin/users`, {
+          headers: { 
+            'Authorization': adminToken,
+            'Bypass-Tunnel-Reminder': 'true'
+          }
+        });
+        const users = await usersRes.json();
+        renderUsersList(users);
+
+      } catch (err) {
+        console.error('Error loading admin dashboard stats:', err);
+      }
+    }
+
+    function renderUsersList(list) {
+      const container = document.getElementById('users-list');
+      
+      if (!list || list.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding: 40px; color:var(--text-muted); font-size:13px;">
+            No VIP players approved yet. They will automatically appear here when they run the verification gate.
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      list.forEach(item => {
+        html += `
+          <div class="pending-item" style="padding:12px; gap:8px; border:1px solid var(--border-color); background:rgba(255,255,255,0.01); border-radius:12px;">
+            <div class="pending-info-row">
+              <span style="font-weight:600;">UID: ${item.uid}</span>
+              <span style="color:var(--color-green); font-weight:bold;">Status: Active VIP</span>
+            </div>
+            <div class="pending-info-row" style="align-items:center;">
+              <span style="font-size:11px; color:var(--text-muted);">Unlocked: ${new Date(item.syncedAt).toLocaleTimeString()}</span>
+              <button class="btn-danger" style="padding: 2px 8px; font-size: 11px; flex-grow:0;" onclick="deleteUser('${item.uid}')">Revoke VIP</button>
+            </div>
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    async function deleteUser(uid) {
+      if (!confirm(`Are you sure you want to revoke VIP access for UID: ${uid}?`)) return;
+
+      try {
+        const res = await fetch(`${API_URL}/api/admin/delete-user`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': adminToken,
+            'Bypass-Tunnel-Reminder': 'true'
+          },
+          body: JSON.stringify({ uid })
+        });
+        const data = await res.json();
+        if (data.success) {
+          loadDashboardData();
+        } else {
+          alert('Failed to remove user.');
+        }
+      } catch (err) {
+        alert('Network error.');
+      }
+    }
+  </script>
+</body>
+</html>

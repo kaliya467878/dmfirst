@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bg-grad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1b1e2a" />
+      <stop offset="100%" stop-color="#0a0c10" />
+    </radialGradient>
+    
+    <!-- Neon Purple Gradient -->
+    <linearGradient id="purple-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#d500f9" />
+      <stop offset="100%" stop-color="#7c00ab" />
+    </linearGradient>
+
+    <!-- Neon Green Gradient -->
+    <linearGradient id="green-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00e676" />
+      <stop offset="100%" stop-color="#00994c" />
+    </linearGradient>
+
+    <!-- Outer Ring Glow filter -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="512" height="512" rx="128" fill="url(#bg-grad)" />
+
+  <!-- Outer Neon Ring -->
+  <circle cx="256" cy="256" r="210" fill="none" stroke="url(#purple-grad)" stroke-width="8" opacity="0.3" />
+  <circle cx="256" cy="256" r="210" fill="none" stroke="url(#green-grad)" stroke-width="4" filter="url(#glow)" />
+
+  <!-- Inner Geometric "W" Symbol -->
+  <g filter="url(#glow)">
+    <!-- Left Stem -->
+    <path d="M140 180 L195 350 L230 350 L200 180 Z" fill="url(#purple-grad)" />
+    
+    <!-- Right Stem -->
+    <path d="M372 180 L317 350 L282 350 L312 180 Z" fill="url(#purple-grad)" />
+
+    <!-- Center V-Shape (Green Accent) -->
+    <path d="M210 320 L256 195 L302 320 L272 320 L256 250 L240 320 Z" fill="url(#green-grad)" />
+  </g>
+
+  <!-- Small Glowing Accent Dots -->
+  <circle cx="256" cy="150" r="6" fill="#00e676" filter="url(#glow)" />
+  <circle cx="170" cy="256" r="4" fill="#d500f9" filter="url(#glow)" />
+  <circle cx="342" cy="256" r="4" fill="#d500f9" filter="url(#glow)" />
+</svg>

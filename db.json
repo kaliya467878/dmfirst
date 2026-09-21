@@ -1,0 +1,44 @@
+{
+  "users": {
+    "55555": {
+      "status": "approved",
+      "depositAmount": 500,
+      "syncedAt": "2026-07-24T16:35:12.400Z"
+    },
+    "77777": {
+      "status": "approved",
+      "depositAmount": 500,
+      "syncedAt": "2026-07-24T16:35:59.779Z"
+    },
+    "88888": {
+      "status": "approved",
+      "depositAmount": 650,
+      "syncedAt": "2026-07-24T16:29:59.022Z"
+    }
+  },
+  "results": [
+    {
+      "period": "202607241001",
+      "number": 7,
+      "color": "Green",
+      "size": "Big",
+      "predictionColor": "Green",
+      "predictionSize": "Big",
+      "predictionNumber": 7,
+      "winColor": true,
+      "winSize": true
+    }
+  ],
+  "trackerActive": true,
+  "lastTrackerPulse": "2026-07-24T16:25:49.967Z",
+  "predictions": {
+    "202607241002": {
+      "color": "Red",
+      "size": "Big",
+      "number": 8,
+      "winChance": 89
+    }
+  },
+  "subordinateTrackerActive": true,
+  "lastSubordinateSync": "2026-07-24T16:29:59.022Z"
+}

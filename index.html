@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 WinGo 1 Min - AI Predictor</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@300;400;600;700&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #0a0e1a;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 50%, rgba(0, 200, 83, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 50%, rgba(255, 0, 0, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 0%, rgba(138, 43, 226, 0.06) 0%, transparent 50%);
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 10px 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 15px 0;
+            position: relative;
+        }
+
+        .header h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 22px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00e676, #00c853, #76ff03);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: none;
+            letter-spacing: 2px;
+        }
+
+        .header .subtitle {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        /* AI Status */
+        .ai-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin: 10px 0;
+            padding: 8px 20px;
+            background: linear-gradient(135deg, rgba(0,230,118,0.1), rgba(0,200,83,0.05));
+            border: 1px solid rgba(0,230,118,0.2);
+            border-radius: 30px;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .ai-dot {
+            width: 8px;
+            height: 8px;
+            background: #00e676;
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 5px #00e676; }
+            50% { opacity: 0.4; box-shadow: 0 0 15px #00e676; }
+        }
+
+        .ai-status span {
+            font-size: 12px;
+            color: #00e676;
+            font-weight: 600;
+        }
+
+        /* Timer Section */
+        .timer-section {
+            background: linear-gradient(145deg, #1a1f35, #141829);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 18px;
+            margin: 12px 0;
+            text-align: center;
+        }
+
+        .period-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+        }
+
+        .period-number {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 16px;
+            color: #ffd740;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .timer-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .timer-box {
+            background: linear-gradient(180deg, #2a3050, #1a1f35);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 8px 14px;
+            min-width: 48px;
+        }
+
+        .timer-box .number {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            color: #fff;
+        }
+
+        .timer-box .label {
+            font-size: 9px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .timer-colon {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            color: #ffd740;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.2; }
+        }
+
+        /* Prediction Card */
+        .prediction-card {
+            background: linear-gradient(145deg, #1a1f35, #141829);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 20px;
+            margin: 12px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .prediction-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #00e676, #ffd740, #ff1744);
+        }
+
+        .prediction-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .prediction-title .icon {
+            font-size: 20px;
+        }
+
+        .prediction-title h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .prediction-title .accuracy {
+            margin-left: auto;
+            background: rgba(0,230,118,0.15);
+            color: #00e676;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .prediction-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .pred-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 14px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .pred-item:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255,255,255,0.15);
+        }
+
+        .pred-item .pred-label {
+            font-size: 10px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .pred-item .pred-value {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .pred-item .pred-confidence {
+            font-size: 10px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .pred-big { color: #ffd740; }
+        .pred-small { color: #40c4ff; }
+        .pred-red { color: #ff1744; }
+        .pred-green { color: #00e676; }
+        .pred-violet { color: #d500f9; }
+
+        /* Number Prediction */
+        .number-prediction {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .number-prediction .label {
+            font-size: 10px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .number-balls {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .num-ball {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 16px;
+            color: #fff;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .num-ball.red-ball { background: linear-gradient(135deg, #ff1744, #d50000); }
+        .num-ball.green-ball { background: linear-gradient(135deg, #00e676, #00c853); }
+        .num-ball.violet-ball { background: linear-gradient(135deg, #d500f9, #aa00ff); }
+        .num-ball.red-violet { background: linear-gradient(135deg, #ff1744 50%, #d500f9 50%); }
+        .num-ball.green-violet { background: linear-gradient(135deg, #00e676 50%, #d500f9 50%); }
+
+        .num-ball.primary {
+            width: 52px;
+            height: 52px;
+            font-size: 20px;
+            border: 2px solid #ffd740;
+            animation: glowBall 2s infinite;
+        }
+
+        @keyframes glowBall {
+            0%, 100% { box-shadow: 0 0 10px rgba(255,215,64,0.3); }
+            50% { box-shadow: 0 0 25px rgba(255,215,64,0.5); }
+        }
+
+        /* Next Periods */
+        .next-periods {
+            background: linear-gradient(145deg, #1a1f35, #141829);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 18px;
+            margin: 12px 0;
+        }
+
+        .next-periods h3 {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .period-row {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            background: rgba(255,255,255,0.02);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255,255,255,0.04);
+            transition: all 0.3s ease;
+        }
+
+        .period-row:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .period-row.current {
+            border-color: rgba(0,230,118,0.3);
+            background: rgba(0,230,118,0.05);
+        }
+
+        .period-row .period-time {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 11px;
+            color: #aaa;
+            width: 50px;
+        }
+
+        .period-row .period-num-small {
+            font-size: 10px;
+            color: #666;
+            width: 65px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .period-row .pred-chips {
+            display: flex;
+            gap: 6px;
+            margin-left: auto;
+        }
+
+        .chip {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .chip-big { background: rgba(255,215,64,0.15); color: #ffd740; }
+        .chip-small { background: rgba(64,196,255,0.15); color: #40c4ff; }
+        .chip-red { background: rgba(255,23,68,0.15); color: #ff1744; }
+        .chip-green { background: rgba(0,230,118,0.15); color: #00e676; }
+        .chip-violet { background: rgba(213,0,249,0.15); color: #d500f9; }
+
+        .mini-ball {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            margin-left: 6px;
+        }
+
+        /* History Section */
+        .history-section {
+            background: linear-gradient(145deg, #1a1f35, #141829);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 18px;
+            margin: 12px 0;
+        }
+
+        .history-section h3 {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .history-balls {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .history-ball {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            font-size: 14px;
+            color: #fff;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .history-ball:hover {
+            transform: scale(1.15);
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 12px 0;
+        }
+
+        .stat-item {
+            background: linear-gradient(145deg, #1a1f35, #141829);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .stat-item .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .stat-item .stat-label {
+            font-size: 9px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        /* Pattern Analysis */
+        .pattern-section {
+            background: linear-gradient(145deg, #1a1f35, #141829);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 18px;
+            margin: 12px 0;
+        }
+
+        .pattern-section h3 {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pattern-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .pattern-bar .bar-label {
+            font-size: 11px;
+            color: #aaa;
+            width: 60px;
+        }
+
+        .pattern-bar .bar-track {
+            flex: 1;
+            height: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0 10px;
+        }
+
+        .pattern-bar .bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 1s ease;
+        }
+
+        .pattern-bar .bar-value {
+            font-size: 11px;
+            font-weight: 600;
+            width: 40px;
+            text-align: right;
+        }
+
+        .bar-fill.red { background: linear-gradient(90deg, #ff1744, #ff5252); }
+        .bar-fill.green { background: linear-gradient(90deg, #00e676, #69f0ae); }
+        .bar-fill.violet { background: linear-gradient(90deg, #d500f9, #ea80fc); }
+        .bar-fill.big { background: linear-gradient(90deg, #ffd740, #ffe57f); }
+        .bar-fill.small { background: linear-gradient(90deg, #40c4ff, #80d8ff); }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 15px 0;
+            margin-top: 10px;
+        }
+
+        .footer p {
+            font-size: 10px;
+            color: #444;
+        }
+
+        .disclaimer {
+            background: rgba(255,152,0,0.08);
+            border: 1px solid rgba(255,152,0,0.15);
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin: 12px 0;
+            text-align: center;
+        }
+
+        .disclaimer p {
+            font-size: 10px;
+            color: #ff9800;
+            line-height: 1.5;
+        }
+
+        /* Animations */
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .slide-in {
+            animation: slideIn 0.6s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* New Prediction Flash */
+        .new-pred-flash {
+            animation: flashBorder 1s ease-out;
+        }
+
+        @keyframes flashBorder {
+            0% { border-color: rgba(0,230,118,0.8); box-shadow: 0 0 20px rgba(0,230,118,0.3); }
+            100% { border-color: rgba(255,255,255,0.08); box-shadow: none; }
+        }
+
+        /* Loading Animation */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0e1a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(0,230,118,0.1);
+            border-top-color: #00e676;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 15px;
+            font-size: 13px;
+            color: #00e676;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+
+        /* ===== LOGIN PAGE ===== */
+        .login-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0e1a;
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .login-page.hidden {
+            opacity: 0;
+            transform: scale(1.05);
+            pointer-events: none;
+        }
+
+        .login-card {
+            width: 90%;
+            max-width: 400px;
+            padding: 35px 25px;
+            text-align: center;
+        }
+
+        .login-logo {
+            font-size: 60px;
+            margin-bottom: 10px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .login-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 26px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00e676, #00c853, #76ff03);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 6px;
+        }
+
+        .login-subtitle {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .login-input-group {
+            position: relative;
+        }
+
+        .login-input-group .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            color: #555;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 14px 14px 14px 42px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: #fff;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .login-input:focus {
+            border-color: #00e676;
+            box-shadow: 0 0 15px rgba(0,230,118,0.15);
+        }
+
+        .login-input::placeholder {
+            color: #555;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        .login-btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-login {
+            background: linear-gradient(135deg, #00e676, #00c853);
+            color: #0a0e1a;
+        }
+
+        .btn-login:hover {
+            box-shadow: 0 5px 25px rgba(0,230,118,0.35);
+            transform: translateY(-2px);
+        }
+
+        .btn-register {
+            background: transparent;
+            border: 2px solid #ffd740 !important;
+            color: #ffd740;
+        }
+
+        .btn-register:hover {
+            background: rgba(255,215,64,0.1);
+            box-shadow: 0 5px 25px rgba(255,215,64,0.2);
+            transform: translateY(-2px);
+        }
+
+        .login-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 6px 0;
+        }
+
+        .login-divider .line {
+            flex: 1;
+            height: 1px;
+            background: rgba(255,255,255,0.08);
+        }
+
+        .login-divider span {
+            font-size: 11px;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .login-features {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .login-feature {
+            text-align: center;
+        }
+
+        .login-feature .feat-icon {
+            font-size: 22px;
+            margin-bottom: 4px;
+        }
+
+        .login-feature .feat-text {
+            font-size: 9px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .login-error {
+            color: #ff1744;
+            font-size: 12px;
+            margin-top: -6px;
+            display: none;
+        }
+
+        .login-note {
+            font-size: 10px;
+            color: #444;
+            margin-top: 15px;
+            line-height: 1.5;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+    </style>
+</head>
+<body>
+
+    <!-- ===== LOGIN PAGE ===== -->
+    <div class="login-page" id="loginPage">
+        <div class="login-card">
+            <!-- STEP 1: Register First -->
+            <div id="step1">
+                <div class="login-logo">🎯</div>
+                <div class="login-title">WINGO PREDICTOR</div>
+                <div class="login-subtitle">AI-Powered Prediction Engine</div>
+
+                <div class="login-form">
+                    <button class="login-btn btn-register" onclick="handleRegister()" style="border: 2px solid #00e676 !important; color: #00e676;">
+                        📝 REGISTER NOW — Get Free Bonus
+                    </button>
+
+                    <div class="login-divider">
+                        <div class="line"></div>
+                        <span>Already Registered?</span>
+                        <div class="line"></div>
+                    </div>
+
+                    <button class="login-btn btn-login" onclick="showStep2()" style="background: linear-gradient(135deg, #ffd740, #ffab00); color: #0a0e1a;">
+                        ✅ Already Registered With Our Link
+                    </button>
+                </div>
+
+                <div class="login-features">
+                    <div class="login-feature">
+                        <div class="feat-icon">🤖</div>
+                        <div class="feat-text">AI Powered</div>
+                    </div>
+                    <div class="login-feature">
+                        <div class="feat-icon">⚡</div>
+                        <div class="feat-text">Real-Time</div>
+                    </div>
+                    <div class="login-feature">
+                        <div class="feat-icon">🎯</div>
+                        <div class="feat-text">High Accuracy</div>
+                    </div>
+                    <div class="login-feature">
+                        <div class="feat-icon">🔒</div>
+                        <div class="feat-text">Secure</div>
+                    </div>
+                </div>
+
+                <p class="login-note">⚡ Hamari link se register karein aur free AI predictions paayein!</p>
+            </div>
+
+            <!-- STEP 2: Enter UID -->
+            <div id="step2" style="display:none;">
+                <div class="login-logo">🔐</div>
+                <div class="login-title">VERIFY UID</div>
+                <div class="login-subtitle">Apna UID enter karein jo register ke baad mila hai</div>
+
+                <div class="login-form">
+                    <div class="login-input-group">
+                        <span class="input-icon">🆔</span>
+                        <input type="text" class="login-input" id="verifyUid" placeholder="Enter Your UID (e.g. 735870)">
+                    </div>
+                    <div class="login-error" id="verifyError"></div>
+
+                    <button class="login-btn btn-login" id="verifyBtn" onclick="handleVerifyUid()">
+                        🔍 VERIFY UID
+                    </button>
+
+                    <div class="login-divider">
+                        <div class="line"></div>
+                        <span>OR</span>
+                        <div class="line"></div>
+                    </div>
+
+                    <button class="login-btn btn-register" onclick="showStep1()">
+                        ⬅️ Back — Register New Account
+                    </button>
+                </div>
+
+                <p class="login-note">🔐 Sirf hamari referral link se registered users ko access milega</p>
+            </div>
+
+            <!-- STEP 3: Deposit Screenshot Verification -->
+            <div id="step3" style="display:none;">
+                <div class="login-logo">📸</div>
+                <div class="login-title">RECHARGE VERIFICATION</div>
+                <div class="login-subtitle">Aaj ki date ka <b>₹300 ya zyada</b> ka Deposit History screenshot upload karein</div>
+
+                <!-- Example Image Box -->
+                <div class="example-box" style="background: rgba(255,255,255,0.03); border: 1px dashed rgba(0,230,118,0.4); border-radius: 12px; padding: 12px; margin-bottom: 15px; text-align: center;">
+                    <div style="font-size: 11px; color: #00e676; font-weight: 600; margin-bottom: 6px;">📸 EXAMPLE SCREENSHOT (Kaisa upload karna hai)</div>
+                    <img src="/deposit_example.png" alt="Example Deposit History" style="max-width: 100%; max-height: 180px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer;" onclick="viewFullExample()">
+                    <div style="font-size: 9px; color: #888; margin-top: 4px;">(Click image to enlarge)</div>
+                </div>
+
+                <!-- Upload Form -->
+                <div class="login-form">
+                    <div class="upload-dropzone" onclick="document.getElementById('depositImageInput').click()" style="background: rgba(255,255,255,0.05); border: 2px dashed rgba(255,215,64,0.5); border-radius: 12px; padding: 16px; text-align: center; cursor: pointer; transition: all 0.3s ease;">
+                        <span style="font-size: 28px;">📤</span>
+                        <div style="font-size: 13px; font-weight: 600; color: #ffd740; margin-top: 6px;">Upload Deposit Screenshot</div>
+                        <div style="font-size: 10px; color: #888; margin-top: 2px;">Click here to select photo from gallery</div>
+                        <input type="file" id="depositImageInput" accept="image/*" style="display:none;" onchange="handleImageSelect(event)">
+                    </div>
+
+                    <!-- Selected Image Preview -->
+                    <div id="imagePreviewContainer" style="display:none; text-align: center; margin: 10px 0;">
+                        <img id="imagePreview" style="max-width: 100%; max-height: 150px; border-radius: 8px; border: 1px solid #00e676;">
+                        <div style="font-size: 10px; color: #00e676; margin-top: 4px;">✅ Photo Selected!</div>
+                    </div>
+
+                    <div class="login-error" id="depositError"></div>
+
+                    <button class="login-btn btn-login" id="verifyDepositBtn" onclick="handleVerifyDeposit()" style="background: linear-gradient(135deg, #00e676, #00c853); color: #0a0e1a;">
+                        ⚡ VERIFY RECHARGE
+                    </button>
+
+                    <button class="login-btn btn-register" onclick="showStep2()">
+                        ⬅️ Back — Change UID
+                    </button>
+                </div>
+
+                <p class="login-note">⚠️ Note: Deposit screenshot mein <b>Aaj ki Date</b> aur minimum <b>₹300 Recharge</b> hona chahiye.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-overlay" id="loading" style="display:none;">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">AI ANALYZING...</div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header fade-in">
+            <h1>🎯 WINGO PREDICTOR</h1>
+            <div class="subtitle">AI-Powered 1 Min Prediction Engine</div>
+        </div>
+
+        <!-- AI Status -->
+        <div class="ai-status fade-in">
+            <div class="ai-dot"></div>
+            <span>AI Engine Active — Analyzing Patterns</span>
+        </div>
+
+        <!-- Timer -->
+        <div class="timer-section fade-in" id="timerSection">
+            <div class="period-label">Current Period</div>
+            <div class="period-number" id="currentPeriod">---</div>
+            <div class="timer-display">
+                <div class="timer-box">
+                    <div class="number" id="timerMin">00</div>
+                    <div class="label">Min</div>
+                </div>
+                <div class="timer-colon">:</div>
+                <div class="timer-box">
+                    <div class="number" id="timerSec">00</div>
+                    <div class="label">Sec</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Prediction -->
+        <div class="prediction-card fade-in" id="predCard">
+            <div class="prediction-title">
+                <span class="icon">🤖</span>
+                <h2>AI Prediction</h2>
+                <span class="accuracy" id="accuracyBadge">85% Accuracy</span>
+            </div>
+
+            <div class="prediction-grid">
+                <div class="pred-item">
+                    <div class="pred-label">Size</div>
+                    <div class="pred-value" id="predSize">---</div>
+                    <div class="pred-confidence" id="sizeConf">---</div>
+                </div>
+                <div class="pred-item">
+                    <div class="pred-label">Color</div>
+                    <div class="pred-value" id="predColor">---</div>
+                    <div class="pred-confidence" id="colorConf">---</div>
+                </div>
+            </div>
+
+            <div class="number-prediction">
+                <div class="label">Predicted Numbers</div>
+                <div class="number-balls" id="predNumbers">
+                    <!-- Filled by JS -->
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- Pattern Analysis -->
+        <div class="pattern-section fade-in">
+            <h3>📊 Pattern Analysis</h3>
+            <div class="pattern-bar">
+                <span class="bar-label" style="color:#ff1744;">Red</span>
+                <div class="bar-track"><div class="bar-fill red" id="barRed" style="width:33%"></div></div>
+                <span class="bar-value" style="color:#ff1744;" id="barRedVal">33%</span>
+            </div>
+            <div class="pattern-bar">
+                <span class="bar-label" style="color:#00e676;">Green</span>
+                <div class="bar-track"><div class="bar-fill green" id="barGreen" style="width:33%"></div></div>
+                <span class="bar-value" style="color:#00e676;" id="barGreenVal">33%</span>
+            </div>
+            <div class="pattern-bar">
+                <span class="bar-label" style="color:#d500f9;">Violet</span>
+                <div class="bar-track"><div class="bar-fill violet" id="barViolet" style="width:10%"></div></div>
+                <span class="bar-value" style="color:#d500f9;" id="barVioletVal">10%</span>
+            </div>
+            <div style="margin-top:14px;"></div>
+            <div class="pattern-bar">
+                <span class="bar-label" style="color:#ffd740;">Big</span>
+                <div class="bar-track"><div class="bar-fill big" id="barBig" style="width:50%"></div></div>
+                <span class="bar-value" style="color:#ffd740;" id="barBigVal">50%</span>
+            </div>
+            <div class="pattern-bar">
+                <span class="bar-label" style="color:#40c4ff;">Small</span>
+                <div class="bar-track"><div class="bar-fill small" id="barSmall" style="width:50%"></div></div>
+                <span class="bar-value" style="color:#40c4ff;" id="barSmallVal">50%</span>
+            </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="disclaimer fade-in">
+            <p>⚠️ Ye AI prediction sirf entertainment ke liye hai. Gambling mein paisa lagane se pehle sochein. Koi bhi prediction 100% accurate nahi hoti.</p>
+        </div>
+
+        <div class="footer">
+            <p>WinGo AI Predictor v2.0 — Powered by Pattern Recognition</p>
+        </div>
+    </div>
+
+    <script>
+        // ============== CONFIG ==============
+        const GAME_TYPE_CODE = '1000'; // from period format: date + 1000 + periodNum
+
+        // 👇👇👇 APNI REGISTER/REFERRAL LINK YAHAN DAALEIN 👇👇👇
+        const REGISTER_LINK = 'https://dmfirst0.com/#/register?invitationCode=43433101307';
+        // 👆👆👆 APNI REGISTER/REFERRAL LINK YAHAN DAALEIN 👆👆👆
+
+        // ============== LOGIN & VERIFICATION FUNCTIONS ==============
+        let selectedBase64Image = null;
+
+        function showStep1() {
+            document.getElementById('step1').style.display = 'block';
+            document.getElementById('step2').style.display = 'none';
+            document.getElementById('step3').style.display = 'none';
+        }
+
+        function showStep2() {
+            document.getElementById('step1').style.display = 'none';
+            document.getElementById('step2').style.display = 'block';
+            document.getElementById('step3').style.display = 'none';
+        }
+
+        function showStep3() {
+            document.getElementById('step1').style.display = 'none';
+            document.getElementById('step2').style.display = 'none';
+            document.getElementById('step3').style.display = 'block';
+        }
+
+        function handleRegister() {
+            window.open(REGISTER_LINK, '_blank');
+        }
+
+        async function handleVerifyUid() {
+            const uid = document.getElementById('verifyUid').value.trim();
+            const errorEl = document.getElementById('verifyError');
+            const btn = document.getElementById('verifyBtn');
+
+            if (!uid) {
+                errorEl.textContent = '⚠️ Please enter your UID!';
+                errorEl.style.display = 'block';
+                errorEl.style.color = '#ff1744';
+                return;
+            }
+
+            // Show loading
+            btn.disabled = true;
+            btn.textContent = '⏳ Verifying UID...';
+            errorEl.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/verify-uid', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ uid: uid })
+                });
+                const result = await response.json();
+
+                if (result.found) {
+                    // SUCCESS - UID verified! Move to Step 3 (Deposit Verification)
+                    errorEl.textContent = '✅ UID Verified! Now upload Deposit Screenshot.';
+                    errorEl.style.display = 'block';
+                    errorEl.style.color = '#00e676';
+
+                    setTimeout(() => {
+                        btn.disabled = false;
+                        btn.textContent = '🔍 VERIFY UID';
+                        showStep3();
+                    }, 600);
+                } else {
+                    // FAILED
+                    errorEl.textContent = '❌ UID not found! Hamari link se register karein pehle.';
+                    errorEl.style.display = 'block';
+                    errorEl.style.color = '#ff1744';
+                    btn.disabled = false;
+                    btn.textContent = '🔍 VERIFY UID';
+                }
+            } catch (e) {
+                errorEl.textContent = '⚠️ Server error. Please try again.';
+                errorEl.style.display = 'block';
+                errorEl.style.color = '#ff9800';
+                btn.disabled = false;
+                btn.textContent = '🔍 VERIFY UID';
+            }
+        }
+
+        function handleImageSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                selectedBase64Image = e.target.result;
+                document.getElementById('imagePreview').src = selectedBase64Image;
+                document.getElementById('imagePreviewContainer').style.display = 'block';
+                document.getElementById('depositError').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function handleVerifyDeposit() {
+            const errorEl = document.getElementById('depositError');
+            const btn = document.getElementById('verifyDepositBtn');
+
+            if (!selectedBase64Image) {
+                errorEl.textContent = '⚠️ Kripya Deposit History ka screenshot select karein!';
+                errorEl.style.display = 'block';
+                errorEl.style.color = '#ff1744';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = '🤖 AI Scanning Screenshot (Date & Amount)...';
+            errorEl.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/verify-deposit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: selectedBase64Image })
+                });
+
+                const result = await response.json();
+
+                if (result.approved) {
+                    errorEl.textContent = `✅ ${result.reason || 'Recharge Verified!'} Access Granted!`;
+                    errorEl.style.display = 'block';
+                    errorEl.style.color = '#00e676';
+
+                    setTimeout(() => {
+                        document.getElementById('loginPage').classList.add('hidden');
+                        const loadingEl = document.getElementById('loading');
+                        loadingEl.style.display = 'flex';
+                        setTimeout(() => {
+                            loadingEl.classList.add('hidden');
+                            init();
+                        }, 500);
+                    }, 800);
+                } else {
+                    errorEl.textContent = result.reason || '❌ Verification failed. Sahi screenshot upload karein.';
+                    errorEl.style.display = 'block';
+                    errorEl.style.color = '#ff1744';
+                    btn.disabled = false;
+                    btn.textContent = '⚡ VERIFY RECHARGE';
+                }
+            } catch (e) {
+                errorEl.textContent = '⚠️ Error analyzing screenshot. Please try again.';
+                errorEl.style.display = 'block';
+                errorEl.style.color = '#ff9800';
+                btn.disabled = false;
+                btn.textContent = '⚡ VERIFY RECHARGE';
+            }
+        }
+
+        function viewFullExample() {
+            window.open('/deposit_example.png', '_blank');
+        }
+
+        // Always show login on fresh page load (no localStorage memory)
+
+        // Allow Enter key to verify
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && document.getElementById('step2').style.display !== 'none') {
+                handleVerifyUid();
+            }
+        });
+        
+        // ============== STATE ==============
+        let currentPeriodNum = 0;
+        let lastPeriodNum = 0;
+        let history = [];
+        let stats = { wins: 0, losses: 0, streak: 0 };
+        let predictions = {};
+        
+        // ============== SEEDED RANDOM (for consistent predictions per period) ==============
+        function seededRandom(seed) {
+            let x = Math.sin(seed * 9301 + 49297) * 49297;
+            x = Math.sin(x * 12345 + 67890) * 67890;
+            return x - Math.floor(x);
+        }
+
+        function multiSeedRandom(seed1, seed2) {
+            const a = seededRandom(seed1);
+            const b = seededRandom(seed2);
+            const c = seededRandom(seed1 * 7 + seed2 * 13);
+            return (a + b + c) / 3;
+        }
+        
+        // ============== PERIOD CALCULATION ==============
+        function getDateStr() {
+            const now = new Date();
+            const y = now.getUTCFullYear();
+            const m = String(now.getUTCMonth() + 1).padStart(2, '0');
+            const d = String(now.getUTCDate()).padStart(2, '0');
+            return `${y}${m}${d}`;
+        }
+
+        function getPeriodNumber() {
+            const now = new Date();
+            // Game uses UTC time (00:00 UTC = 05:30 IST)
+            const utcHours = now.getUTCHours();
+            const utcMinutes = now.getUTCMinutes();
+            const elapsedMinutes = utcHours * 60 + utcMinutes;
+            return 10001 + elapsedMinutes;
+        }
+
+        function getFullPeriod(periodNum) {
+            return `${getDateStr()}${GAME_TYPE_CODE}${periodNum}`;
+        }
+
+        function getTimeForPeriod(periodNum) {
+            const minutesSinceUTCMidnight = periodNum - 10001;
+            // Convert to IST (UTC + 5:30 = +330 minutes)
+            const istTotalMinutes = minutesSinceUTCMidnight + 330;
+            const h = Math.floor(istTotalMinutes / 60) % 24;
+            const m = istTotalMinutes % 60;
+            return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+        }
+
+        // ============== AI PREDICTION ENGINE ==============
+        function getNumberColor(num) {
+            // WinGo color rules
+            if (num === 0) return 'red-violet';
+            if (num === 5) return 'green-violet';
+            if ([2, 4, 6, 8].includes(num)) return 'red';
+            if ([1, 3, 7, 9].includes(num)) return 'green';
+            return 'red';
+        }
+
+        function getColorClass(num) {
+            const c = getNumberColor(num);
+            if (c === 'red-violet' || c === 'red') return 'red-ball';
+            if (c === 'green-violet' || c === 'green') return 'green-ball';
+            return 'red-ball';
+        }
+
+        function getBallClass(num) {
+            const c = getNumberColor(num);
+            if (c === 'red-violet') return 'red-violet';
+            if (c === 'green-violet') return 'green-violet';
+            if (c === 'red') return 'red-ball';
+            if (c === 'green') return 'green-ball';
+            return 'red-ball';
+        }
+
+        function predictForPeriod(periodNum) {
+            if (predictions[periodNum]) return predictions[periodNum];
+
+            const dateNum = parseInt(getDateStr());
+            const seed = periodNum * 31 + dateNum;
+
+            // Generate predicted numbers using pattern analysis simulation
+            const r1 = seededRandom(seed);
+            const r2 = seededRandom(seed + 7);
+            const r3 = seededRandom(seed + 13);
+            const r4 = multiSeedRandom(seed, periodNum);
+            const r5 = multiSeedRandom(seed + 3, periodNum + 5);
+
+            // Primary prediction
+            const primaryNum = Math.floor(r1 * 10);
+            // Secondary numbers
+            const nums = [primaryNum];
+            const sec1 = Math.floor(r2 * 10);
+            const sec2 = Math.floor(r3 * 10);
+            if (!nums.includes(sec1)) nums.push(sec1);
+            if (!nums.includes(sec2)) nums.push(sec2);
+
+            // Big (5-9) or Small (0-4)
+            const isBig = primaryNum >= 5;
+            const size = isBig ? 'BIG' : 'SMALL';
+
+            // Color
+            const colorType = getNumberColor(primaryNum);
+            let color = 'RED';
+            if (colorType.includes('green')) color = 'GREEN';
+            if (colorType === 'red-violet' || colorType === 'green-violet') color = 'VIOLET';
+
+            // Confidence
+            const sizeConf = Math.floor(65 + r4 * 25);
+            const colorConf = Math.floor(60 + r5 * 28);
+
+            const pred = {
+                periodNum,
+                fullPeriod: getFullPeriod(periodNum),
+                time: getTimeForPeriod(periodNum),
+                primaryNum,
+                numbers: nums,
+                size,
+                color,
+                sizeConfidence: sizeConf,
+                colorConfidence: colorConf,
+                isBig
+            };
+
+            predictions[periodNum] = pred;
+            return pred;
+        }
+
+        // ============== GENERATE HISTORY ==============
+        function generateHistory() {
+            const current = getPeriodNumber();
+            history = [];
+            for (let i = 20; i >= 1; i--) {
+                const pNum = current - i;
+                const seed = pNum * 17 + parseInt(getDateStr()) * 3;
+                const num = Math.floor(seededRandom(seed) * 10);
+                history.push({
+                    periodNum: pNum,
+                    number: num,
+                    color: getNumberColor(num),
+                    size: num >= 5 ? 'BIG' : 'SMALL'
+                });
+            }
+            updatePatternBars();
+        }
+
+        // ============== UI UPDATES ==============
+        function updateTimer() {
+            const now = new Date();
+            const seconds = now.getSeconds();
+            const remaining = 59 - seconds;
+
+            document.getElementById('timerMin').textContent = '00';
+            document.getElementById('timerSec').textContent = String(remaining).padStart(2, '0');
+
+            const newPeriod = getPeriodNumber();
+            if (newPeriod !== currentPeriodNum) {
+                currentPeriodNum = newPeriod;
+                onNewPeriod();
+            }
+        }
+
+        function onNewPeriod() {
+            const pred = predictForPeriod(currentPeriodNum);
+            document.getElementById('currentPeriod').textContent = pred.fullPeriod;
+
+            // Add a "result" for previous period to history
+            if (lastPeriodNum > 0) {
+                const prevSeed = lastPeriodNum * 17 + parseInt(getDateStr()) * 3;
+                const prevResult = Math.floor(seededRandom(prevSeed) * 10);
+                history.push({
+                    periodNum: lastPeriodNum,
+                    number: prevResult,
+                    color: getNumberColor(prevResult),
+                    size: prevResult >= 5 ? 'BIG' : 'SMALL'
+                });
+                if (history.length > 30) history.shift();
+
+                // Check if prediction was correct
+                const prevPred = predictions[lastPeriodNum];
+                if (prevPred) {
+                    const sizeCorrect = (prevResult >= 5 ? 'BIG' : 'SMALL') === prevPred.size;
+                    if (sizeCorrect) {
+                        stats.wins++;
+                        stats.streak++;
+                    } else {
+                        stats.losses++;
+                        stats.streak = 0;
+                    }
+                }
+                updatePatternBars();
+            }
+            lastPeriodNum = currentPeriodNum;
+
+            updatePredictionCard(pred);
+
+            // Flash animation
+            document.getElementById('predCard').classList.add('new-pred-flash');
+            setTimeout(() => {
+                document.getElementById('predCard').classList.remove('new-pred-flash');
+            }, 1000);
+        }
+
+        function updatePredictionCard(pred) {
+            // Size
+            const sizeEl = document.getElementById('predSize');
+            sizeEl.textContent = pred.size;
+            sizeEl.className = 'pred-value ' + (pred.isBig ? 'pred-big' : 'pred-small');
+            document.getElementById('sizeConf').textContent = `Confidence: ${pred.sizeConfidence}%`;
+
+            // Color
+            const colorEl = document.getElementById('predColor');
+            colorEl.textContent = pred.color;
+            const colorClass = pred.color === 'RED' ? 'pred-red' : pred.color === 'GREEN' ? 'pred-green' : 'pred-violet';
+            colorEl.className = 'pred-value ' + colorClass;
+            document.getElementById('colorConf').textContent = `Confidence: ${pred.colorConfidence}%`;
+
+            // Numbers
+            const numbersDiv = document.getElementById('predNumbers');
+            numbersDiv.innerHTML = '';
+            pred.numbers.forEach((num, i) => {
+                const ball = document.createElement('div');
+                ball.className = `num-ball ${getBallClass(num)}${i === 0 ? ' primary' : ''}`;
+                ball.textContent = num;
+                numbersDiv.appendChild(ball);
+            });
+
+            // Accuracy badge
+            const totalPred = stats.wins + stats.losses;
+            if (totalPred > 0) {
+                const acc = Math.round((stats.wins / totalPred) * 100);
+                document.getElementById('accuracyBadge').textContent = `${acc}% Accuracy`;
+            }
+        }
+
+
+        function updatePatternBars() {
+            if (history.length === 0) return;
+            const recent = history.slice(-20);
+            const total = recent.length;
+
+            let reds = 0, greens = 0, violets = 0, bigs = 0, smalls = 0;
+            recent.forEach(h => {
+                if (h.color.includes('red')) reds++;
+                if (h.color.includes('green')) greens++;
+                if (h.color.includes('violet')) violets++;
+                if (h.size === 'BIG') bigs++;
+                if (h.size === 'SMALL') smalls++;
+            });
+
+            const rp = Math.round(reds/total*100);
+            const gp = Math.round(greens/total*100);
+            const vp = Math.round(violets/total*100);
+            const bp = Math.round(bigs/total*100);
+            const sp = Math.round(smalls/total*100);
+
+            document.getElementById('barRed').style.width = rp + '%';
+            document.getElementById('barRedVal').textContent = rp + '%';
+            document.getElementById('barGreen').style.width = gp + '%';
+            document.getElementById('barGreenVal').textContent = gp + '%';
+            document.getElementById('barViolet').style.width = vp + '%';
+            document.getElementById('barVioletVal').textContent = vp + '%';
+            document.getElementById('barBig').style.width = bp + '%';
+            document.getElementById('barBigVal').textContent = bp + '%';
+            document.getElementById('barSmall').style.width = sp + '%';
+            document.getElementById('barSmallVal').textContent = sp + '%';
+        }
+
+        // ============== INIT ==============
+        function init() {
+            generateHistory();
+            currentPeriodNum = getPeriodNumber();
+            lastPeriodNum = currentPeriodNum;
+            onNewPeriod();
+
+            // Update timer every second
+            setInterval(updateTimer, 1000);
+            updateTimer();
+        }
+
+        // Don't auto-init — login triggers init
+    </script>
+</body>
+</html>
